@@ -670,6 +670,12 @@ async function loadMapFromURL() {
     const mapName = params.get("map");
 
     if (!mapName) return;
+    const img = new Image();
+    img.src = "maps/" + mapName + ".jpg";
+
+    img.onload = () => {
+        loadMapImage(img);
+    };
 
     try {
 
@@ -718,5 +724,6 @@ function generateShareLink(){
     return window.location.origin +
            window.location.pathname +
            "?map=" + mapName;
+
 
 }
