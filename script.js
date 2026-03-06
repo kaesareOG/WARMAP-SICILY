@@ -727,3 +727,34 @@ function generateShareLink(){
 
 
 }
+function loadMapImage(img){
+
+    const w = img.width;
+    const h = img.height;
+
+    const bounds = [[0,0],[h,w]];
+
+    if(imageOverlay){
+        map.removeLayer(imageOverlay);
+    }
+
+    imageOverlay = L.imageOverlay(img.src, bounds).addTo(map);
+
+    map.setMaxBounds(bounds);
+    map.fitBounds(bounds);
+}function loadMapImage(img){
+
+    const w = img.width;
+    const h = img.height;
+
+    const bounds = [[0,0],[h,w]];
+
+    if(imageOverlay){
+        map.removeLayer(imageOverlay);
+    }
+
+    imageOverlay = L.imageOverlay(img.src, bounds).addTo(map);
+
+    map.setMaxBounds(bounds);
+    map.fitBounds(bounds);
+}
