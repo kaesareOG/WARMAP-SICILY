@@ -1,0 +1,162 @@
+:root {
+    --bg-dark: #121212;
+    --bg-panel: #1e1e1e;
+    --text-main: #e0e0e0;
+    --accent: #4caf50;
+    --accent-hover: #45a049;
+    --danger: #d32f2f;
+    --danger-hover: #b71c1c;
+    --border-color: #333;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Courier New', Courier, monospace; /* Военный стиль текста */
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    overflow: hidden;
+}
+
+#app-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Боковая панель */
+#sidebar {
+    width: 300px;
+    background-color: var(--bg-panel);
+    border-right: 2px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    z-index: 1000;
+}
+
+#sidebar h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.btn {
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    padding: 10px;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: 0.2s;
+    display: block;
+    width: 100%;
+}
+
+.btn:hover { background-color: #444; }
+.btn.success { background-color: var(--accent); border-color: var(--accent); }
+.btn.success:hover { background-color: var(--accent-hover); }
+.btn.danger { background-color: var(--danger); border-color: var(--danger); }
+.btn.danger:hover { background-color: var(--danger-hover); }
+
+.mode-toggle {
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #2a2a2a;
+    border: 1px solid var(--border-color);
+}
+
+.sectors-panel h3 {
+    margin-bottom: 10px;
+    font-size: 16px;
+    color: #888;
+}
+
+#sector-list {
+    list-style: none;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+#sector-list li {
+    background: #2a2a2a;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-left: 5px solid gray;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#sector-list li:hover { background: #3a3a3a; }
+
+/* Карта */
+#map-container {
+    flex-grow: 1;
+    position: relative;
+    background-color: #000;
+    /* Опциональная сетка в военном стиле */
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+#map { width: 100%; height: 100%; background: transparent; }
+
+/* Модальное окно */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal.hidden { display: none; }
+
+.modal-content {
+    background: var(--bg-panel);
+    padding: 20px;
+    border: 1px solid var(--accent);
+    width: 400px;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.2);
+}
+
+.modal-content h3 { margin-bottom: 15px; color: var(--accent); }
+.modal-content label { display: block; margin-top: 10px; margin-bottom: 5px; font-size: 14px; color: #aaa; }
+.modal-content input, .modal-content select, .modal-content textarea {
+    width: 100%;
+    padding: 8px;
+    background: #121212;
+    color: #fff;
+    border: 1px solid #555;
+    font-family: inherit;
+}
+
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.hidden { display: none !important; }
+/* Активная кнопка кисти */
+.brush-status.active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.brush-status.active:hover {
+    background-color: var(--accent-hover);
+}

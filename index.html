@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивная Военная Карта — Штаб</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="app-container">
+        <aside id="sidebar">
+            <h2>Командный Центр</h2>
+            
+            <div class="control-group">
+                <label class="btn" for="map-upload">Загрузить карту</label>
+                <input type="file" id="map-upload" accept="image/png, image/jpeg" style="display: none;">
+                
+                <button id="btn-draw" class="btn admin-only">Создать сектор</button><div class="control-group admin-only">
+
+    <h3>Кисть статуса</h3>
+
+    <button id="btn-brush" class="btn">
+        Включить кисть
+    </button>
+
+    <div class="brush-buttons">
+        <button class="btn brush-status" data-status="axis">
+            Ось
+        </button>
+
+        <button class="btn brush-status" data-status="allies">
+            Союзники
+        </button>
+
+        <button class="btn brush-status" data-status="contested">
+            Спорный
+        </button>
+    </div>
+
+</div>
+                <button id="btn-export" class="btn">Экспорт карты</button>
+                <button id="btn-share" class="btn">Получить ссылку</button>
+
+                <label class="btn admin-only" for="map-import">Импорт карты</label>
+                <input type="file" id="map-import" accept=".json" style="display: none;">
+            </div>
+
+            <div class="mode-toggle">
+                <label>
+                    <input type="checkbox" id="view-mode-toggle">
+                    Режим просмотра (Игрок)
+                </label>
+            </div>
+
+            <div class="sectors-panel">
+                <h3>Список секторов</h3>
+                <ul id="sector-list">
+                    </ul>
+            </div>
+        </aside>
+
+        <main id="map-container">
+            <div id="map"></div>
+        </main>
+    </div>
+
+    <div id="sector-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Настройки сектора</h3>
+            
+            <label for="sector-name">Название сектора:</label>
+            <input type="text" id="sector-name" placeholder="Например: Высота 45">
+            
+            <label for="sector-status">Статус:</label>
+            <select id="sector-status">
+                <option value="axis">Под контролем Оси</option>
+                <option value="contested">Спорный участок</option>
+                <option value="allies">Под контролем Союзников</option>
+            </select>
+            
+            <label for="sector-desc">Описание (необязательно):</label>
+            <textarea id="sector-desc" rows="3" placeholder="Краткая сводка..."></textarea>
+            
+            <div class="modal-actions">
+                <button id="btn-save-sector" class="btn success">Сохранить</button>
+                <button id="btn-delete-sector" class="btn danger hidden">Удалить сектор</button>
+                <button id="btn-close-modal" class="btn secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
