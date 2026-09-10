@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sicily — Operation Husky</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <style>
+    :root{
+      --olive-950:#182016;
+      --olive-900:#222b1e;
+      --olive-800:#2d3827;
+      --olive-700:#3c4a32;
+      --khaki:#b8ad83;
+      --paper:#e8dfc4;
+      --ink:#20241d;
+      --muted:#a9aa92;
+      --line:#69705b;
+      --ally:#456b4a;
+      --axis:#8b4338;
+      --disputed:#a28a3b;
+      --shadow:rgba(12,16,10,.42);
+    }
+
+    *{box-sizing:border-box}
+    html,body{
+      margin:0;height:100%;width:100%;
+      font-family:"Trebuchet MS",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+      background:var(--olive-950);color:#f1ead3;
+      overflow:hidden;
+    }
+    #map{height:100%;width:100%;background:#cfc7aa}
+
+    /* --- HQ chrome --- */
+    .topbar{
+      position:fixed;z-index:1000;left:12px;right:12px;top:12px;
+      display:flex;align-items:flex-start;gap:8px;pointer-events:none;
+    }
+    .brand,.toolbar{
+      pointer-events:auto;
+      background:rgba(34,43,30,.95);
+      border:1px solid #68705b;
+      box-shadow:0 6px 22px var(--shadow);
+    }
+    .brand{
+      padding:8px 11px 7px;
+      border-radius:3px;
+      font-weight:900;letter-spacing:1.2px;
+      text-transform:uppercase;
+      font-size:13px;
+      line-height:1.05;
+    }
+    .brand small{
+      display:block;color:#bcb99e;font-size:9px;
+      letter-spacing:1.7px;font-weight:700;margin-top:4px;
+    }
+    .toolbar{
+      margin-left:auto;padding:4px;
+      display:flex;gap:4px;border-radius:3px;
+    }
+    button{
+      border:1px solid #69705b;
+      background:#303a29;color:#eee6cd;
+      border-radius:2px;padding:7px 9px;min-height:34px;
+      cursor:pointer;font:700 11px/1 "Trebuchet MS",sans-serif;
+      text-transform:uppercase;letter-spacing:.6px;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+    button:hover{background:#3a472f}
+    .btn-label{display:inline}
+    button:active{transform:translateY(1px)}
+    .primary{background:#53623e;border-color:#87936d}
+    .danger{background:#6b332c;border-color:#9c5549}
+
+    /* --- Compact GM panel --- */
+    .sidebar{
+      position:fixed;z-index:999;right:12px;top:66px;
+      width:300px;max-height:calc(100vh - 78px);overflow:auto;
+      background:rgba(34,43,30,.97);
+      border:1px solid #69705b;border-radius:3px;
+      box-shadow:0 12px 35px var(--shadow);
+      padding:12px;display:none;
+    }
+    .sidebar.open{display:block}
+    .sidebar h3{
+      margin:0 0 9px;font-size:13px;letter-spacing:1px;
+      text-transform:uppercase;
+    }
+    .sidebar hr{border:0;border-top:1px solid #4f5947;margin:10px 0}
+    .row{display:flex;gap:6px;align-items:center;margin:7px 0}
+    .row>*{flex:1}
+    input,select{
+      width:100%;padding:9px;border-radius:2px;
+      border:1px solid #69705b;background:#1c2419;color:#f2ead3;
+    }
+    .hint{color:#aaa991;font-size:11px;line-height:1.4}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 7px;border-radius:2px;font-size:10px;
+      background:#3b4630;border:1px solid #68705b;
+      text-transform:uppercase;letter-spacing:.5px;
+    }
+
+    /* --- Map decorations --- */
+    .map-stamp{
+      position:fixed;z-index:800;right:15px;bottom:15px;
+      pointer-events:none;
+      padding:7px 9px 6px;
+      border:2px solid rgba(55,62,45,.72);
+      color:rgba(48,55,39,.82);
+      background:rgba(226,217,187,.42);
+      transform:rotate(-2deg);
+      font-weight:900;text-align:center;
+      letter-spacing:1.2px;text-transform:uppercase;
+      line-height:1.05;
+      mix-blend-mode:multiply;
+    }
+    .map-stamp strong{display:block;font-size:12px}
+    .map-stamp span{display:block;font-size:7px;margin-top:3px;letter-spacing:1.5px}
+    .map-corner{
+      position:fixed;z-index:800;left:15px;bottom:15px;
+      pointer-events:none;color:rgba(39,47,32,.78);
+      background:rgba(226,217,187,.48);
+      border:1px solid rgba(70,76,58,.45);
+      padding:6px 8px;font:800 9px/1.25 "Courier New",monospace;
+      letter-spacing:1px;text-transform:uppercase;
+      mix-blend-mode:multiply;
+    }
+    .map-grid-line{
+      stroke:rgba(66,76,55,.23);stroke-width:1;
+      vector-effect:non-scaling-stroke;
+    }
+    .map-grid-major{
+      stroke:rgba(55,66,47,.34);stroke-width:1.2;
+      vector-effect:non-scaling-stroke;
+    }
+
+    /* --- Military object symbols --- */
+    .obj-icon{
+      width:29px;height:29px;
+      display:grid;place-items:center;
+      background:rgba(235,226,198,.94);
+      border:2px solid #252d20;
+      color:#252d20;
+      box-shadow:0 2px 7px rgba(0,0,0,.42);
+      font-size:12px;
+      position:relative;
+    }
+    .obj-icon i{font-size:12px}
+    .obj-icon::after{
+      content:"";position:absolute;inset:-4px;
+      border:1px solid rgba(37,45,32,.42);
+      pointer-events:none;
+    }
+    .obj-icon.obj-command{border-radius:2px}
+    .obj-icon.obj-infra{border-radius:50%}
+    .obj-icon.obj-combat{transform:rotate(45deg);border-radius:0}
+    .obj-icon.obj-combat i{transform:rotate(-45deg)}
+
+    /* --- Popups --- */
+    .leaflet-popup-content-wrapper,.leaflet-popup-tip{
+      background:#eee5ca;color:#252a20;
+      border:1px solid #8b876d;
+    }
+    .leaflet-popup-content-wrapper{border-radius:2px}
+    .leaflet-popup-tip{box-shadow:none}
+    .leaflet-popup-content{
+      min-width:175px;margin:10px 12px;
+      font-family:"Trebuchet MS",sans-serif;
+    }
+    .popup-title{
+      font-weight:900;margin-bottom:6px;
+      text-transform:uppercase;letter-spacing:.7px;
+      border-bottom:1px solid #aaa58a;padding-bottom:5px;
+    }
+    .popup-muted{color:#666;font-size:11px}
+    .leaflet-popup-content button{
+      background:#38442f;color:#eee7d0;border-color:#657054;
+      width:100%;margin-top:4px;
+    }
+    .leaflet-popup-content button.danger{
+      background:#5a3029;color:#f1e6d5;border-color:#7a4b41;
+    }
+    .leaflet-popup-content button.danger:hover{background:#6a3830}
+
+    /* --- Login --- */
+    .login{
+      position:fixed;inset:0;z-index:2000;
+      background:rgba(18,24,15,.76);
+      display:grid;place-items:center;
+    }
+    .login-card{
+      width:min(400px,calc(100% - 28px));
+      background:#252e20;border:1px solid #737b62;
+      border-radius:3px;padding:18px;
+      box-shadow:0 20px 70px #0009;
+    }
+    .login-card h2{
+      margin:0 0 8px;font-size:16px;
+      letter-spacing:1px;text-transform:uppercase;
+    }
+    .login-card .row{margin-top:12px}
+    .hidden{display:none!important}
+
+    .leaflet-control-attribution{
+      font-size:8px;background:rgba(232,223,196,.72)!important;
+      color:#454a3a!important;
+    }
+    /* Zoom buttons are intentionally hidden: mouse wheel / trackpad / touch handle zooming. */
+    .leaflet-control-zoom{display:none!important}
+    .leaflet-control-scale-line{
+      background:rgba(232,223,196,.68);
+      border:2px solid #414a36;border-top:0;
+      color:#303729;font:700 10px/1 "Courier New",monospace;
+    }
+
+    @media(max-width:700px){
+      .topbar{left:7px;right:7px;top:7px;gap:5px}
+      .brand{padding:7px 8px;font-size:10px;letter-spacing:.9px}
+      .brand small{font-size:7px;letter-spacing:1.1px;margin-top:3px}
+      .toolbar{padding:3px}
+      .toolbar button{
+        min-width:34px;width:34px;height:34px;padding:0;
+        font-size:0;display:grid;place-items:center;
+      }
+      .toolbar button i{font-size:12px}
+      .toolbar .btn-label{display:none}
+      .sidebar{
+        left:7px;right:7px;top:auto;bottom:7px;
+        width:auto;max-height:55vh;padding:10px;
+      }
+      .sidebar h3{font-size:12px}
+      .map-stamp{
+        right:8px;bottom:9px;padding:6px 7px;
+      }
+      .map-stamp strong{font-size:10px}
+      .map-stamp span{font-size:6px}
+      .leaflet-control-scale{margin-bottom:10px!important;margin-left:8px!important}
+    }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+
+<div class="map-stamp" aria-hidden="true">
+  <strong>OPERATION HUSKY</strong>
+  <span>FIELD MAP • SICILY • JUL 1943</span>
+</div>
+<div class="topbar">
+  <div class="brand">OPERATION HUSKY<small>SICILY • FIELD HQ</small></div>
+  <div class="toolbar">
+    <button id="adminBtn" title="GM"><i class="fa-solid fa-pen-ruler"></i><span class="btn-label"> GM</span></button>
+    <button id="loginBtn" title="Вход GM"><i class="fa-solid fa-key"></i><span class="btn-label"> Войти</span></button>
+    <button id="logoutBtn" class="hidden" title="Выйти"><i class="fa-solid fa-power-off"></i><span class="btn-label"> Выйти</span></button>
+  </div>
+</div>
+
+<div id="sidebar" class="sidebar">
+  <h3 id="sideTitle">Сводка</h3>
+  <div id="stats"></div>
+  <div id="adminPanel" class="hidden">
+    <hr>
+    <h3>Редактор</h3>
+    <div class="hint">Включите режим редактирования. Сектора рисуются прямо на карте, объекты ставятся кликом.</div>
+    <div class="row"><button class="primary" id="drawSector"><i class="fa-solid fa-draw-polygon"></i> Нарисовать сектор</button></div>
+    <div class="row"><button id="addObject"><i class="fa-solid fa-location-dot"></i> Поставить объект</button></div>
+    <div class="row"><button id="reload"><i class="fa-solid fa-rotate"></i> Обновить</button></div>
+    <p class="hint">Сектора: после завершения рисования появится окно настройки. Объект: сначала выберите шаблон, затем кликните по карте.</p>
+  </div>
+</div>
+
+
+<div id="loginModal" class="login hidden">
+  <div class="login-card">
+    <h2>Вход GM</h2>
+    <p class="hint">Игрокам вход не нужен. Создай аккаунт в Supabase Auth и используй его только для управления картой.</p>
+    <input id="email" type="email" placeholder="Email" autocomplete="email">
+    <br><br>
+    <input id="password" type="password" placeholder="Пароль" autocomplete="current-password">
+    <div class="row"><button class="primary" id="doLogin">Войти</button><button id="closeLogin">Отмена</button></div>
+    <div id="loginMsg" class="hint"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.18.0/dist/leaflet-geoman.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+const SUPABASE_URL = "https://qxcepgkedsxqeiatamnz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_8M-3W_ELQAxy1a0wJzuNew_oU4vdXLv";
+
+const IMAGE_W = 1504, IMAGE_H = 1128; // размер присланной карты
+const supabaseReady = !SUPABASE_URL.startsWith("PASTE_");
+const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const map = L.map('map', {crs:L.CRS.Simple, minZoom:-3, maxZoom:3, zoomSnap:.25});
+const bounds = [[0,0],[IMAGE_H,IMAGE_W]];
+L.imageOverlay('assets/sicily.jpg', bounds).addTo(map);
+map.fitBounds(bounds);
+
+// --- Field-map overlays: subtle coordinate grid, scale, compass and date ---
+function addFieldOverlays(){
+  // Grid is an overlay only; the original map image is never modified.
+  const svg = L.svg({padding:0.5}).addTo(map);
+  const gridGroup = L.layerGroup().addTo(map);
+  const step = 125;
+  for(let x=0;x<=IMAGE_W;x+=step){
+    L.polyline([[0,x],[IMAGE_H,x]],{className:(x%500===0?'map-grid-major':'map-grid-line'),interactive:false}).addTo(gridGroup);
+  }
+  for(let y=0;y<=IMAGE_H;y+=step){
+    L.polyline([[y,0],[y,IMAGE_W]],{className:(y%500===0?'map-grid-major':'map-grid-line'),interactive:false}).addTo(gridGroup);
+  }
+
+  L.control.scale({imperial:false,metric:true,maxWidth:110}).addTo(map);
+
+}
+addFieldOverlays();
+
+const sectorLayers = new Map();
+const objectLayers = new Map();
+let gmMode = false, waitingObject = false;
+
+const OWNER = {
+  allies: {name:'Союзники', color:'#2563eb'},
+  axis: {name:'Ось', color:'#dc2626'},
+  disputed: {name:'Спорный', color:'#eab308'}
+};
+const OBJECTS = {
+  airfield:{label:'Аэродром',icon:'fa-plane'},
+  port:{label:'Порт',icon:'fa-anchor'},
+  hq:{label:'Штаб',icon:'fa-star'},
+  depot:{label:'Склад',icon:'fa-boxes-stacked'},
+  artillery:{label:'Артиллерия',icon:'fa-bomb'},
+  fort:{label:'Укрепление',icon:'fa-shield-halved'},
+  radar:{label:'Радар',icon:'fa-tower-broadcast'},
+  bridge:{label:'Мост',icon:'fa-road'},
+  objective:{label:'Цель',icon:'fa-flag'}
+};
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+function polygonStyle(owner){return {color:OWNER[owner]?.color||'#64748b',fillColor:OWNER[owner]?.color||'#64748b',fillOpacity:.24,weight:2}}
+function iconFor(type){
+  const combat=['artillery','fort','objective'].includes(type);
+  const command=['hq','radar'].includes(type);
+  const cls=combat?'obj-combat':command?'obj-command':'obj-infra';
+  return L.divIcon({
+    className:'',
+    html:`<div class="obj-icon ${cls}"><i class="fa-solid ${OBJECTS[type]?.icon||'fa-location-dot'}"></i></div>`,
+    iconSize:[29,29],iconAnchor:[14.5,14.5],popupAnchor:[0,-15]
+  })
+}
+
+function sectorPopup(s){
+  return `<div class="popup-title">${esc(s.name)}</div>
+  <div><span class="pill">${esc(OWNER[s.owner]?.name||s.owner)}</span></div>
+  <p>${esc(s.notes||'')}</p>
+  ${gmMode?`<button onclick="editSector('${s.id}')">Редактировать</button><button class="danger" onclick="deleteSector('${s.id}')">Удалить сектор</button>`:''}`;
+}
+function objectPopup(o){
+  return `<div class="popup-title">${esc(o.name||OBJECTS[o.type]?.label)}</div>
+  <div>${esc(OBJECTS[o.type]?.label||o.type)}</div><p>${esc(o.notes||'')}</p>
+  ${gmMode?`<button onclick="editObject('${o.id}')">Редактировать</button><button class="danger" onclick="deleteObject('${o.id}')">Удалить объект</button>`:''}`;
+}
+
+async function loadAll(){
+  if(!supabaseReady){demoData(); return}
+  const [{data:sectors,error:e1},{data:objects,error:e2}] = await Promise.all([
+    sb.from('sectors').select('*'),
+    sb.from('objects').select('*')
+  ]);
+  if(e1||e2){console.error(e1||e2); alert('Ошибка загрузки данных. Проверь Supabase и SQL.'); return}
+  clearLayers(); sectors.forEach(renderSector); objects.forEach(renderObject);
+}
+function clearLayers(){sectorLayers.forEach(l=>map.removeLayer(l));objectLayers.forEach(l=>map.removeLayer(l));sectorLayers.clear();objectLayers.clear()}
+function renderSector(s){
+  const layer=L.polygon(s.geometry,polygonStyle(s.owner)).addTo(map);
+  layer.bindPopup(sectorPopup(s)); sectorLayers.set(s.id,layer);
+}
+function renderObject(o){
+  const layer=L.marker([o.lat,o.lng],{icon:iconFor(o.type)}).addTo(map);
+  layer.bindPopup(objectPopup(o)); objectLayers.set(o.id,layer);
+}
+function demoData(){
+  const demo=[
+    {id:'d1',name:'Палермо',owner:'axis',notes:'Демонстрационный сектор',geometry:[[750,300],[900,350],[850,500],[690,450]]},
+    {id:'d2',name:'Южное побережье',owner:'allies',notes:'Демонстрационный сектор',geometry:[[500,650],[700,700],[650,900],[430,820]]},
+    {id:'d3',name:'Центр',owner:'disputed',notes:'Демонстрационный сектор',geometry:[[650,500],[900,520],[820,700],[620,680]]}
+  ];
+  clearLayers(); demo.forEach(renderSector);
+}
+
+async function createSector(geometry){
+  const name=prompt('Название сектора:','Сектор');
+  if(!name)return;
+  const owner=prompt('Владелец: allies = Союзники, axis = Ось, disputed = Спорный','allies');
+  const notes=prompt('Описание / гарнизон / заметки:','')||'';
+  if(!supabaseReady){renderSector({id:'local-'+Date.now(),name,owner,notes,geometry});return}
+  const {error}=await sb.from('sectors').insert({name,owner,notes,geometry});
+  if(error)alert(error.message); else await loadAll();
+}
+async function createObject(latlng){
+  const type=prompt('Тип объекта: airfield / port / hq / depot / artillery / fort / radar / bridge / objective','hq');
+  if(!OBJECTS[type]){alert('Неизвестный тип');return}
+  const name=prompt('Название объекта:',OBJECTS[type].label)||OBJECTS[type].label;
+  const notes=prompt('Заметки:','')||'';
+  if(!supabaseReady){renderObject({id:'local-'+Date.now(),type,name,notes,lat:latlng.lat,lng:latlng.lng});return}
+  const {error}=await sb.from('objects').insert({type,name,notes,lat:latlng.lat,lng:latlng.lng});
+  if(error)alert(error.message); else await loadAll();
+}
+
+window.editSector=async function(id){
+  if(!supabaseReady)return alert('Подключи Supabase для редактирования.');
+  const {data:s}=await sb.from('sectors').select('*').eq('id',id).single();
+  if(!s)return;
+  const owner=prompt('Владелец: allies / axis / disputed',s.owner)||s.owner;
+  const name=prompt('Название',s.name)||s.name;
+  const notes=prompt('Заметки',s.notes||'')||'';
+  const {error}=await sb.from('sectors').update({owner,name,notes}).eq('id',id);
+  if(error)alert(error.message);else await loadAll();
+}
+window.editObject=async function(id){
+  if(!supabaseReady)return alert('Подключи Supabase для редактирования.');
+  const {data:o}=await sb.from('objects').select('*').eq('id',id).single();
+  if(!o)return;
+  const type=prompt('Тип объекта',o.type)||o.type;
+  const name=prompt('Название',o.name)||o.name;
+  const notes=prompt('Заметки',o.notes||'')||'';
+  if(!OBJECTS[type])return alert('Неизвестный тип');
+  const {error}=await sb.from('objects').update({type,name,notes}).eq('id',id);
+  if(error)alert(error.message);else await loadAll();
+}
+window.deleteSector=async function(id){
+  if(!supabaseReady)return alert('Подключи Supabase для удаления.');
+  if(!confirm('Удалить этот сектор?\nДействие нельзя отменить.'))return;
+  const {error}=await sb.from('sectors').delete().eq('id',id);
+  if(error)alert('Не удалось удалить сектор: '+error.message);else await loadAll();
+}
+window.deleteObject=async function(id){
+  if(!supabaseReady)return alert('Подключи Supabase для удаления.');
+  if(!confirm('Удалить этот объект?\nДействие нельзя отменить.'))return;
+  const {error}=await sb.from('objects').delete().eq('id',id);
+  if(error)alert('Не удалось удалить объект: '+error.message);else await loadAll();
+}
+
+document.getElementById('drawSector').onclick=()=>{
+  if(!gmMode)return alert('Сначала войдите как GM.');
+  map.pm.enableDraw('Polygon',{snappable:false,allowSelfIntersection:false});
+};
+document.getElementById('addObject').onclick=()=>{
+  if(!gmMode)return alert('Сначала войдите как GM.');
+  waitingObject=true; alert('Теперь кликни по карте, куда поставить объект.');
+};
+map.on('click',e=>{if(waitingObject){waitingObject=false;createObject(e.latlng)}});
+map.on('pm:create',e=>{
+  const latlngs=e.layer.getLatLngs()[0].map(p=>[p.lat,p.lng]);
+  map.removeLayer(e.layer); createSector(latlngs);
+});
+document.getElementById('reload').onclick=loadAll;
+document.getElementById('adminBtn').onclick=()=>{
+  if(!gmMode)return alert('Для режима GM нажми «Войти» и авторизуйся.');
+  document.getElementById('sideTitle').textContent='GM — редактор';
+  document.getElementById('adminPanel').classList.remove('hidden');
+  document.getElementById('sidebar').classList.add('open');
+};
+document.getElementById('loginBtn').onclick=()=>document.getElementById('loginModal').classList.remove('hidden');
+document.getElementById('closeLogin').onclick=()=>document.getElementById('loginModal').classList.add('hidden');
+document.getElementById('logoutBtn').onclick=async()=>{if(sb)await sb.auth.signOut();setAuth(null)};
+document.getElementById('doLogin').onclick=async()=>{
+  if(!sb)return document.getElementById('loginMsg').textContent='Сначала укажи Supabase URL и anon key в index.html.';
+  const email=document.getElementById('email').value,password=document.getElementById('password').value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password});
+  document.getElementById('loginMsg').textContent=error?error.message:'Готово';
+  if(!error){document.getElementById('loginModal').classList.add('hidden');setAuth(data.user)}
+};
+function setAuth(user){
+  gmMode=!!user;
+  document.getElementById('loginBtn').classList.toggle('hidden',gmMode);
+  document.getElementById('logoutBtn').classList.toggle('hidden',!gmMode);
+  document.getElementById('adminPanel').classList.toggle('hidden',!gmMode);
+  if(gmMode){document.getElementById('adminBtn').title='GM включён';}
+  loadAll();
+}
+(async()=>{
+  if(sb){
+    const {data:{session}}=await sb.auth.getSession(); setAuth(session?.user||null);
+    sb.auth.onAuthStateChange((_e,session)=>setAuth(session?.user||null));
+    sb.channel('map-realtime')
+      .on('postgres_changes',{event:'*',schema:'public',table:'sectors'},()=>loadAll())
+      .on('postgres_changes',{event:'*',schema:'public',table:'objects'},()=>loadAll())
+      .subscribe();
+  }else loadAll();
+})();
+</script>
+</body>
+</html>
